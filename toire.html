@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>救え！わが家のトイレ危機〜トイレ防衛隊の出動だ！〜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #1e293b;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        ruby rt {
+            font-size: 0.6em;
+            color: inherit;
+            opacity: 0.85;
+            font-weight: normal;
+        }
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px) rotate(-1deg); }
+            40%, 80% { transform: translateX(6px) rotate(1deg); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float 2.5s ease-in-out infinite;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.08); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+        }
+        .glow-button {
+            animation: pulse-glow 2s infinite;
+        }
+        /* Custom scrollbar for inner content */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .game-btn {
+            transition: all 0.12s ease;
+        }
+        .game-btn:active {
+            transform: translateY(3px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4">
+
+    <!-- Smartphone Frame Container -->
+    <div id="app-frame" class="w-full max-w-[440px] h-[100dvh] sm:h-[860px] sm:max-h-[94dvh] bg-sky-50 sm:rounded-[36px] sm:border-[8px] sm:border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+
+        <!-- Top Global Header -->
+        <header class="bg-blue-900 text-white px-3 py-2.5 flex items-center justify-between shrink-0 z-20 shadow-md">
+            <div class="flex items-center gap-1.5">
+                <span class="text-xl">🚽</span>
+                <span class="font-extrabold text-sm tracking-tight text-yellow-300">トイレ<ruby>防衛隊<rt>ぼうえいたい</rt></ruby></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-home" onclick="confirmGoHome()" class="hidden bg-blue-800 hover:bg-blue-700 text-xs px-2.5 py-1.5 rounded-full border border-blue-600 font-bold">
+                    🏠 タイトルへ
+                </button>
+                <button id="btn-sound" onclick="toggleAudio()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1 game-btn">
+                    <span id="sound-icon">🎵</span>
+                    <span id="sound-text">音 ON</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- HUD Bar (Shown during Stage 1 & Stage 2) -->
+        <div id="hud-bar" class="hidden bg-white border-b-2 border-slate-200 px-3 py-2 shrink-0 z-10 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+                <!-- Sister Patience Gauge -->
+                <div class="flex-1">
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                        <span class="text-pink-600 flex items-center gap-1">
+                            <span id="sister-face">😣</span> <ruby>妹<rt>いもうと</rt></ruby>のガマン<ruby>限界<rt>げんかい</rt></ruby>ゲージ
+                        </span>
+                        <span id="patience-text" class="text-slate-600">20%</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                        <div id="patience-bar" class="h-full bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 transition-all duration-300" style="width: 20%"></div>
+                    </div>
+                </div>
+                <!-- Score -->
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-xl px-2.5 py-1 text-center shrink-0">
+                    <div class="text-[10px] text-blue-600 font-bold"><ruby>安心<rt>あんしん</rt></ruby>スコア</div>
+                    <div id="score-display" class="text-base font-extrabold text-blue-900">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Screen Area -->
+        <main class="flex-1 relative overflow-y-auto overflow-x-hidden flex flex-col">
+
+            <!-- ================= SCREEN 1: TITLE ================= -->
+            <section id="screen-title" class="flex-1 flex flex-col justify-between p-4 bg-gradient-to-b from-sky-100 via-white to-blue-100">
+                <!-- Top Badge -->
+                <div class="text-center mt-1">
+                    <div class="inline-block bg-blue-900 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                        🚨 <ruby>災害<rt>さいがい</rt></ruby>はいつ<ruby>起<rt>お</rt></ruby>こるかわかりません
+                    </div>
+                </div>
+
+                <!-- Main Title Box -->
+                <div class="my-auto text-center">
+                    <p class="text-blue-800 font-extrabold text-sm mb-1">
+                        ライフラインが<ruby>止<rt>と</rt></ruby>まっても<ruby>自宅<rt>じたく</rt></ruby>のトイレは<ruby>使<rt>つか</rt></ruby>えます！
+                    </p>
+                    <div class="bg-white border-4 border-blue-800 rounded-3xl p-4 shadow-xl relative overflow-hidden">
+                        <div class="absolute -top-6 -right-6 w-20 h-20 bg-yellow-300 rounded-full opacity-40"></div>
+                        <span class="inline-block bg-red-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-md mb-1">小学生向け防災体験ゲーム</span>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-950 leading-tight">
+                            <ruby>救<rt>すく</rt></ruby>え！わが<ruby>家<rt>や</rt></ruby>の<br>
+                            <span class="text-red-600 text-3xl sm:text-4xl">トイレ<ruby>危機<rt>クライシス</rt></ruby></span>
+                        </h1>
+                        <p class="text-xs font-bold text-slate-600 mt-1">〜トイレ<ruby>防衛隊<rt>ぼうえいたい</rt></ruby>の<ruby>出動<rt>しゅつどう</rt></ruby>だ！〜</p>
+
+                        <!-- Hero Illustration SVG/Emoji -->
+                        <div class="my-4 flex items-center justify-center gap-3 animate-float">
+                            <div class="text-center">
+                                <div class="text-4xl">👦</div>
+                                <span class="text-[10px] font-bold text-slate-600">お兄ちゃん</span>
+                            </div>
+                            <div class="w-20 h-20 bg-sky-100 rounded-2xl border-2 border-sky-400 flex items-center justify-center relative shadow-inner">
+                                <span class="text-5xl">🚽</span>
+                                <span class="absolute -top-2 -right-2 text-2xl">✨</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-4xl">👧</div>
+                                <span class="text-[10px] font-bold text-slate-600"><ruby>妹<rt>いもうと</rt></ruby></span>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-2 text-xs font-bold text-amber-900">
+                            📣 <ruby>合言葉<rt>あいことば</rt></ruby>：<span class="text-red-600 font-extrabold">「トイレは<ruby>我慢<rt>がまん</rt></ruby>しない！<ruby>備<rt>そな</rt></ruby>えが<ruby>安心<rt>あんしん</rt></ruby>！」</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-2.5 mb-2">
+                    <button onclick="startGame()" class="w-full bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-xl py-4 rounded-2xl border-b-4 border-amber-700 shadow-lg game-btn glow-button flex items-center justify-center gap-2">
+                        <span>🚀 ゲームスタート！</span>
+                    </button>
+                    <button onclick="openChecklistDirectly()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3 rounded-xl border-b-4 border-emerald-800 shadow game-btn flex items-center justify-center gap-2">
+                        <span>✅ わが<ruby>家<rt>や</rt></ruby>の<ruby>備<rt>そな</rt></ruby>えチェックリストを見る</span>
+                    </button>
+                    <p class="text-[11px] text-center text-slate-500 font-bold">
+                        🔊 ボタンを押すと楽しいBGMと効果音が鳴るよ！（右上からON/OFF可能）
+                    </p>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 2: OPENING STORY ================= -->
+            <section id="screen-story" class="hidden flex-1 flex flex-col justify-between p-4 bg-slate-800 text-white">
+                <!-- Disaster Status Visual -->
+                <div class="bg-slate-900 border-2 border-red-500 rounded-2xl p-3 shadow-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-red-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full animate-pulse">
+                            ⚠️ <ruby>緊急事態発生<rt>きんきゅうじたいはっせい</rt></ruby>！
+                        </span>
+                        <span class="text-xs text-slate-300">わが<ruby>家<rt>や</rt></ruby>（4人<ruby>家族<rt>かぞく</rt></ruby>）</span>
+                    </div>
+
+                    <!-- 3 Lifelines Stopped Cards -->
+                    <div class="grid grid-cols-3 gap-2 text-center my-2">
+                        <div id="lifeline-1" class="bg-slate-800 border border-slate-600 rounded-xl p-2 opacity-40 transition-all duration-300">
+                            <div class="text-2xl">🚰❌</div>
+                            <div class="text-xs font-extrabold text-sky-300 mt-1"><ruby>水道<rt>すいどう</rt></ruby>が<ruby>止<rt>と</rt></ruby>まる</div>
+                            <div class="text-[10px] text-slate-300 leading-tight mt-0.5">水が流せない</div>
+                        </div>
+                        <div id="lifeline-2" class="bg-slate-800 border border-slate-600 rounded-xl p-2 opacity-40 transition-all duration-300">
+                            <div class="text-2xl">💡❌</div>
+                            <div class="text-xs font-extrabold text-yellow-300 mt-1"><ruby>電気<rt>でんき</rt></ruby>が<ruby>止<rt>と</rt></ruby>まる</div>
+                            <div class="text-[10px] text-slate-300 leading-tight mt-0.5">照明や換気扇が停止</div>
+                        </div>
+                        <div id="lifeline-3" class="bg-slate-800 border border-slate-600 rounded-xl p-2 opacity-40 transition-all duration-300">
+                            <div class="text-2xl">🔧❌</div>
+                            <div class="text-xs font-extrabold text-orange-300 mt-1"><ruby>下水道<rt>げすいどう</rt></ruby>の<ruby>危険<rt>きけん</rt></ruby></div>
+                            <div class="text-[10px] text-slate-300 leading-tight mt-0.5">排水できないかも</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Character & Warning Board -->
+                <div id="story-warning-box" class="hidden bg-amber-100 text-slate-900 border-3 border-amber-500 rounded-2xl p-3 my-2 shadow-md animate-pop">
+                    <div class="text-xs font-extrabold text-red-600 mb-1 flex items-center gap-1">
+                        <span>🚨</span> トイレを<ruby>我慢<rt>がまん</rt></ruby>すると…
+                    </div>
+                    <ul class="text-xs font-bold space-y-1 text-slate-800">
+                        <li>✔️ <ruby>体調不良<rt>たいちょうふりょう</rt></ruby>やストレスの<ruby>原因<rt>げんいん</rt></ruby>に！</li>
+                        <li>✔️ <ruby>病気<rt>びょうき</rt></ruby>や<ruby>感染症<rt>かんせんしょう</rt></ruby>のリスクが<ruby>高<rt>たか</rt></ruby>まる！</li>
+                        <li>✔️ <ruby>特<rt>とく</rt></ruby>に<ruby>子<rt>こ</rt></ruby>どもや<ruby>高齢者<rt>こうれいしゃ</rt></ruby>は<ruby>影響<rt>えいきょう</rt></ruby>を<ruby>受<rt>う</rt></ruby>けやすい！</li>
+                    </ul>
+                </div>
+
+                <!-- Dialogue Box -->
+                <div class="bg-white text-slate-900 rounded-3xl p-4 border-4 border-blue-500 shadow-xl mt-auto">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="story-avatar" class="w-14 h-14 rounded-2xl bg-sky-100 border-2 border-blue-400 flex items-center justify-center text-3xl shrink-0">
+                            👦
+                        </div>
+                        <div>
+                            <span id="story-speaker" class="bg-blue-700 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">
+                                お兄ちゃん（あなた）
+                            </span>
+                            <p id="story-step-indicator" class="text-[11px] text-slate-400 font-bold mt-0.5">ストーリー 1 / 5</p>
+                        </div>
+                    </div>
+                    <p id="story-text" class="text-sm sm:text-base font-bold text-slate-800 min-h-[4.5rem] leading-relaxed">
+                        グラグラッ！！大きな地震だ！<br>家族みんなケガはなかったけど、おうちのライフラインが止まっちゃったぞ…！
+                    </p>
+                    <button onclick="nextStoryStep()" class="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3 rounded-xl border-b-4 border-blue-800 game-btn flex items-center justify-center gap-2">
+                        <span id="story-btn-text">つぎへ ▶</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 3: STAGE 1 (SEARCH ITEMS) ================= -->
+            <section id="screen-stage1" class="hidden flex-1 flex flex-col p-3 bg-sky-50">
+                <!-- Mission Header -->
+                <div class="bg-emerald-700 text-white rounded-2xl p-2.5 mb-2 shadow flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] bg-yellow-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">ステージ 1</span>
+                        <h2 class="text-xs sm:text-sm font-extrabold mt-0.5">
+                            家の<ruby>中<rt>なか</rt></ruby>から「<ruby>非常用<rt>ひじょうよう</rt></ruby>トイレグッズ」を6つ<ruby>探<rt>さが</rt></ruby>そう！
+                        </h2>
+                    </div>
+                    <div class="bg-emerald-900 px-3 py-1 rounded-xl text-center shrink-0">
+                        <div class="text-[10px] text-emerald-200">発見数</div>
+                        <div class="text-sm font-extrabold text-yellow-300"><span id="found-count">0</span> / 6</div>
+                    </div>
+                </div>
+
+                <!-- Room Tabs -->
+                <div class="grid grid-cols-3 gap-1.5 mb-2">
+                    <button id="tab-entrance" onclick="switchRoom('entrance')" class="py-2 rounded-xl font-extrabold text-xs border-b-4 transition-all bg-amber-400 text-slate-900 border-amber-600">
+                        🚪 <ruby>玄関<rt>げんかん</rt></ruby>
+                    </button>
+                    <button id="tab-toilet" onclick="switchRoom('toilet')" class="py-2 rounded-xl font-extrabold text-xs border-b-4 transition-all bg-white text-slate-600 border-slate-300">
+                        🚽 トイレ・<ruby>洗面所<rt>せんめんじょ</rt></ruby>
+                    </button>
+                    <button id="tab-bedroom" onclick="switchRoom('bedroom')" class="py-2 rounded-xl font-extrabold text-xs border-b-4 transition-all bg-white text-slate-600 border-slate-300">
+                        🛏️ <ruby>寝室<rt>しんしつ</rt></ruby>
+                    </button>
+                </div>
+
+                <!-- Interactive Room Area -->
+                <div id="room-container" class="flex-1 bg-white rounded-2xl border-4 border-slate-300 p-3 flex flex-col justify-between relative overflow-hidden shadow-inner">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                        <span id="room-title" class="text-xs font-extrabold text-slate-700">📍 玄関（すぐに持ち出せる場所！）</span>
+                        <span class="text-[11px] text-blue-600 font-bold">怪しい場所をタップしよう👆</span>
+                    </div>
+
+                    <!-- 4 Spots Grid inside the current room -->
+                    <div id="room-spots" class="grid grid-cols-2 gap-2.5 my-auto py-2">
+                        <!-- Dynamically populated by JS -->
+                    </div>
+
+                    <!-- Tip Footer -->
+                    <div class="bg-amber-50 border border-amber-300 rounded-xl p-2 text-[11px] font-bold text-amber-900 flex items-center gap-2">
+                        <span class="text-lg">💡</span>
+                        <span><ruby>置<rt>お</rt></ruby>き<ruby>場所<rt>ばしょ</rt></ruby>のコツ：トイレ、<ruby>玄関<rt>げんかん</rt></ruby>、<ruby>寝室<rt>しんしつ</rt></ruby>など<strong>すぐに<ruby>持<rt>も</rt></ruby>ち<ruby>出<rt>だ</rt></ruby>せる<ruby>場所<rt>ばしょ</rt></ruby></strong>に！</span>
+                    </div>
+                </div>
+
+                <!-- Collected Inventory Tray -->
+                <div class="mt-2 bg-slate-800 text-white rounded-2xl p-2.5">
+                    <div class="text-[10px] text-slate-300 font-bold mb-1">🎒 みつけた非常用トイレグッズ（タップで確認）</div>
+                    <div id="inventory-grid" class="grid grid-cols-6 gap-1.5">
+                        <!-- 6 slots -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 3.5: QUIZ CORNER (6 QUESTIONS) ================= -->
+            <section id="screen-quiz" class="hidden flex-1 flex flex-col justify-between p-3.5 bg-gradient-to-b from-indigo-900 via-blue-900 to-slate-900 text-white">
+                <!-- Quiz Header -->
+                <div class="bg-indigo-950/90 border-2 border-indigo-400 rounded-2xl p-3 shadow-lg flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🎓</span>
+                        <div>
+                            <span class="text-[10px] bg-yellow-400 text-slate-950 font-extrabold px-2 py-0.5 rounded-full">トイレット博士の挑戦状</span>
+                            <h2 class="text-xs sm:text-sm font-extrabold text-white mt-0.5"><ruby>防災<rt>ぼうさい</rt></ruby>トイレクイズ（全6問）</h2>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-800 px-3 py-1 rounded-xl text-center border border-indigo-500 shrink-0">
+                        <div class="text-[10px] text-indigo-200">問題</div>
+                        <div class="text-sm font-extrabold text-yellow-300"><span id="quiz-progress-num">1</span> / 6</div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="bg-white text-slate-900 rounded-3xl p-4 border-4 border-amber-400 shadow-xl my-auto">
+                    <div class="flex items-center gap-2.5 mb-2">
+                        <div class="w-11 h-11 rounded-2xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-2xl shrink-0">
+                            🚽
+                        </div>
+                        <div>
+                            <span id="quiz-badge" class="bg-blue-700 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">第1問</span>
+                            <div class="text-xs text-slate-500 font-bold mt-0.5">3つの中から正解を選ぼう！</div>
+                        </div>
+                    </div>
+
+                    <p id="quiz-question-text" class="text-sm sm:text-base font-extrabold text-slate-800 leading-relaxed bg-sky-50 p-3 rounded-2xl border border-sky-200 mb-3">
+                        ここに問題文が入ります
+                    </p>
+
+                    <!-- 3 Options -->
+                    <div id="quiz-options-container" class="space-y-2">
+                        <!-- Dynamically rendered -->
+                    </div>
+                </div>
+
+                <!-- Bottom Mascot Cheer -->
+                <div class="bg-blue-950/80 border border-blue-700 rounded-2xl p-2.5 text-xs font-bold text-sky-200 flex items-center gap-2">
+                    <span class="text-xl">👧</span>
+                    <span>妹：「お兄ちゃん、お姉ちゃん、クイズに全問正解してトイレを完成させてね！」</span>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 4: STAGE 2 (5-STEP SIMULATION) ================= -->
+            <section id="screen-stage2" class="hidden flex-1 flex flex-col p-3 bg-sky-50">
+                <!-- Mission Header -->
+                <div class="bg-blue-800 text-white rounded-2xl p-2.5 mb-2 shadow flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] bg-yellow-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">ステージ 2</span>
+                        <h2 class="text-xs sm:text-sm font-extrabold mt-0.5">
+                            <ruby>簡単<rt>かんたん</rt></ruby>5ステップ！<ruby>順番<rt>じゅんばん</rt></ruby>どおりにトイレを<ruby>使<rt>つか</rt></ruby>おう！
+                        </h2>
+                    </div>
+                    <div class="bg-blue-950 px-3 py-1 rounded-xl text-center shrink-0">
+                        <div class="text-[10px] text-blue-200">ステップ</div>
+                        <div class="text-sm font-extrabold text-yellow-300"><span id="step-progress">0</span> / 5</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Toilet Visual Container -->
+                <div id="toilet-stage-box" class="bg-white rounded-2xl border-4 border-blue-300 p-2.5 mb-2 flex flex-col items-center justify-center relative shadow-inner min-h-[188px]">
+                    <!-- Lantern Status Badge -->
+                    <div class="absolute top-2 left-2 bg-amber-100 border border-amber-400 text-amber-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span>🔦 ランタン<ruby>点灯中<rt>てんとうちゅう</rt></ruby>！</span>
+                    </div>
+
+                    <!-- Current Step Prompt -->
+                    <div id="step-instruction-banner" class="bg-blue-100 text-blue-900 font-extrabold text-[11px] px-3 py-1 rounded-full mb-1.5 mt-4 text-center">
+                        👇 まずは「ステップ 1」のカードを選ぼう！
+                    </div>
+
+                    <!-- Dynamic SVG Toilet Illustration -->
+                    <div id="toilet-svg-holder" class="w-40 h-28 flex items-center justify-center">
+                        <!-- Rendered dynamically by renderToiletSVG(step) -->
+                    </div>
+
+                    <!-- Completed Steps Mini Badges (5 steps) -->
+                    <div class="grid grid-cols-5 gap-1 w-full mt-1.5">
+                        <div id="badge-step-1" class="text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400">①袋かぶせる</div>
+                        <div id="badge-step-2" class="text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400">②凝固剤</div>
+                        <div id="badge-step-3" class="text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400">③袋を結ぶ</div>
+                        <div id="badge-step-4" class="text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400">④消臭袋へ</div>
+                        <div id="badge-step-5" class="text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400">⑤可燃ごみ</div>
+                    </div>
+                </div>
+
+                <!-- Action Cards Selection -->
+                <div class="flex-1 flex flex-col justify-between">
+                    <div class="text-xs font-extrabold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>🃏 次にやる行動をタップしよう！（ひっかけに注意⚠️）</span>
+                    </div>
+                    <div id="step-cards-container" class="space-y-1.5 my-auto">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 5: ENDING & CHECKLIST ================= -->
+            <section id="screen-ending" class="hidden flex-1 flex flex-col p-3 bg-gradient-to-b from-amber-50 via-white to-sky-100 overflow-y-auto">
+                <!-- Master Certificate Card -->
+                <div class="bg-white border-4 border-amber-400 rounded-3xl p-4 shadow-xl text-center relative mb-3">
+                    <div class="inline-block bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full shadow mb-1">
+                        🏆 トイレ<ruby>防災<rt>ぼうさい</rt></ruby>マスター<ruby>認定証<rt>にんていしょう</rt></ruby>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-blue-950">
+                        わが<ruby>家<rt>や</rt></ruby>のトイレ<ruby>危機<rt>クライシス</rt></ruby>を<ruby>救<rt>すく</rt></ruby>った！
+                    </h2>
+                    <div class="flex justify-center items-center gap-4 my-2">
+                        <div class="text-3xl animate-bounce">👦👧</div>
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl px-4 py-1.5">
+                            <div class="text-[10px] font-bold text-blue-600">最終安心スコア</div>
+                            <div id="final-score" class="text-2xl font-extrabold text-blue-900">1200点</div>
+                        </div>
+                        <div class="text-3xl animate-bounce">🚽✨</div>
+                    </div>
+
+                    <!-- Key Slogan Box from Pamphlet -->
+                    <div class="bg-amber-100 border-2 border-amber-400 rounded-2xl p-2.5 mt-2">
+                        <div class="text-[11px] font-bold text-amber-800">📣 <ruby>覚<rt>おぼ</rt></ruby>えておきたい<ruby>合言葉<rt>あいことば</rt></ruby></div>
+                        <div class="text-base sm:text-lg font-extrabold text-blue-950">
+                            「トイレは<ruby>我慢<rt>がまん</rt></ruby>しない！<ruby>備<rt>そな</rt></ruby>えが<ruby>安心<rt>あんしん</rt></ruby>！」
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Real-Home Checklist (From Pamphlet Bottom Left & Right) -->
+                <div class="bg-emerald-800 text-white rounded-3xl p-3.5 shadow-lg mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <span class="bg-yellow-400 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">おうちミッション</span>
+                            <h3 class="text-sm font-extrabold mt-0.5">📋 わが<ruby>家<rt>や</rt></ruby>の<ruby>備<rt>そな</rt></ruby>えチェックリスト</h3>
+                        </div>
+                        <div class="text-right">
+                            <span id="checklist-badge" class="bg-emerald-950 text-emerald-300 text-xs font-extrabold px-2.5 py-1 rounded-xl border border-emerald-600">
+                                0 / 10 チェック
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-emerald-100 mb-2">
+                        おうちの<ruby>人<rt>ひと</rt></ruby>と<ruby>一緒<rt>いっしょ</rt></ruby>にチェックしてみよう！（目安：4人家族で最低3日分、できれば7日分＝140回分）
+                    </p>
+
+                    <div class="bg-white text-slate-800 rounded-2xl p-2.5 space-y-1.5 max-h-60 overflow-y-auto" id="checklist-items">
+                        <!-- Dynamically rendered checkboxes -->
+                    </div>
+
+                    <!-- Everyday Habits (普段からできること 4 items) -->
+                    <div class="mt-3 bg-emerald-900 rounded-2xl p-2.5">
+                        <div class="text-xs font-extrabold text-yellow-300 mb-1.5">✨ <ruby>普段<rt>ふだん</rt></ruby>からできること（4つのポイント）</div>
+                        <div class="grid grid-cols-1 gap-1 text-[11px] font-bold text-emerald-50">
+                            <div>① <ruby>使<rt>つか</rt></ruby>い<ruby>方<rt>かた</rt></ruby>を<ruby>家族<rt>かぞく</rt></ruby>で<ruby>確認<rt>かくにん</rt></ruby>しておく（いざという時にあわてない）</div>
+                            <div>② <ruby>定期的<rt>ていきてき</rt></ruby>に<ruby>点検<rt>てんけん</rt></ruby>・<ruby>補充<rt>ほじゅう</rt></ruby>する（使用期限や数量をチェック！）</div>
+                            <div>③ トイレをきれいに<ruby>保<rt>たも</rt></ruby>つ<ruby>習慣<rt>しゅうかん</rt></ruby>を（袋のセットも片付けもスムーズ）</div>
+                            <div>④ <ruby>自治体<rt>じちたい</rt></ruby>のルールを<ruby>確認<rt>かくにん</rt></ruby>（ごみの出し方や仮設トイレの場所）</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Replay Button -->
+                <button onclick="resetToTitle()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3.5 rounded-2xl border-b-4 border-blue-800 shadow-lg game-btn mb-2">
+                    🔄 もういちど最初から遊ぶ
+                </button>
+            </section>
+
+        </main>
+
+        <!-- ================= MODAL POPUP (Item Found / Math Quiz / Warning) ================= -->
+        <div id="modal-overlay" class="hidden absolute inset-0 bg-slate-950/75 backdrop-blur-xs z-30 flex items-center justify-center p-4">
+            <div id="modal-box" class="bg-white border-4 border-blue-600 rounded-3xl p-4 w-full max-w-sm shadow-2xl animate-pop text-center">
+                <div id="modal-icon" class="text-5xl mb-2">✨</div>
+                <div id="modal-tag" class="inline-block bg-blue-100 text-blue-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full mb-1">
+                    アイテム発見！
+                </div>
+                <h3 id="modal-title" class="text-lg font-extrabold text-slate-900 mb-2">簡易トイレセット</h3>
+                <p id="modal-desc" class="text-xs sm:text-sm font-bold text-slate-600 leading-relaxed mb-4">
+                    水を使わずに用を足せる袋と凝固剤のセットだよ！
+                </p>
+                <!-- Extra quiz choices container if quiz modal -->
+                <div id="modal-choices" class="hidden space-y-2 mb-3"></div>
+                <button id="modal-close-btn" onclick="closeModal()" class="w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold py-3 rounded-xl border-b-4 border-amber-600 game-btn">
+                    OK！つづける
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC & WEB AUDIO SYNTH ================= -->
+    <script>
+        /* =========================================================================
+           1. WEB AUDIO API SYNTHESIZER (BGM & SOUND EFFECTS)
+           ========================================================================= */
+        let audioCtx = null;
+        let soundEnabled = true;
+        let bgmInterval = null;
+        let currentBgmMode = 'none'; // 'title', 'crisis', 'search', 'setup', 'clear'
+        let noteStep = 0;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const text = document.getElementById('sound-text');
+            const btn = document.getElementById('btn-sound');
+
+            if (soundEnabled) {
+                icon.textContent = '🎵';
+                text.textContent = '音 ON';
+                btn.className = 'bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1 game-btn';
+                playSE('tap');
+                startBGM(currentBgmMode);
+            } else {
+                icon.textContent = '🔇';
+                text.textContent = '音 OFF';
+                btn.className = 'bg-slate-600 hover:bg-slate-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1 game-btn';
+                stopBGM();
+            }
+        }
+
+        function playTone(freq, type, duration, delay = 0, vol = 0.12) {
+            if (!soundEnabled || !audioCtx) return;
+            const startTime = audioCtx.currentTime + delay;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.001, startTime);
+            gain.gain.linearRampToValueAtTime(vol, startTime + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration + 0.02);
+        }
+
+        function playSE(effect) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            switch (effect) {
+                case 'tap':
+                    playTone(660, 'sine', 0.07, 0, 0.1);
+                    break;
+                case 'quake':
+                    // Low rumble effect
+                    playTone(65, 'sawtooth', 0.35, 0, 0.18);
+                    playTone(55, 'square', 0.4, 0.15, 0.18);
+                    break;
+                case 'item':
+                    // Sparkle chime
+                    playTone(587.33, 'triangle', 0.1, 0, 0.14);
+                    playTone(880, 'triangle', 0.1, 0.08, 0.14);
+                    playTone(1174.66, 'triangle', 0.25, 0.16, 0.15);
+                    break;
+                case 'correct':
+                    // Ding-Dong!
+                    playTone(659.25, 'sine', 0.18, 0, 0.18);
+                    playTone(523.25, 'sine', 0.35, 0.16, 0.18);
+                    break;
+                case 'step':
+                    // Upward cheerful arpeggio
+                    playTone(523.25, 'triangle', 0.1, 0, 0.15);
+                    playTone(659.25, 'triangle', 0.1, 0.08, 0.15);
+                    playTone(783.99, 'triangle', 0.1, 0.16, 0.15);
+                    playTone(1046.5, 'triangle', 0.25, 0.24, 0.16);
+                    break;
+                case 'wrong':
+                    // Buzzer!
+                    playTone(155, 'sawtooth', 0.22, 0, 0.18);
+                    playTone(130, 'sawtooth', 0.32, 0.18, 0.18);
+                    break;
+                case 'fanfare':
+                    // Victory melody
+                    const notes = [523.25, 523.25, 523.25, 659.25, 783.99, 1046.5];
+                    const times = [0, 0.12, 0.24, 0.38, 0.55, 0.75];
+                    const durs  = [0.1, 0.1, 0.1, 0.14, 0.15, 0.45];
+                    notes.forEach((n, i) => playTone(n, 'triangle', durs[i], times[i], 0.18));
+                    break;
+            }
+        }
+
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        function startBGM(mode) {
+            currentBgmMode = mode;
+            stopBGM();
+            if (!soundEnabled || mode === 'none') return;
+            initAudio();
+
+            noteStep = 0;
+            // Define cheerful loops for each screen
+            const melodies = {
+                title:  { tempo: 280, notes: [523, 659, 784, 659, 587, 698, 784, 0] },
+                crisis: { tempo: 240, notes: [220, 0, 233, 0, 220, 196, 220, 0] },
+                search: { tempo: 240, notes: [523, 587, 659, 784, 659, 587, 523, 0, 440, 523, 659, 587, 523, 494, 523, 0] },
+                setup:  { tempo: 230, notes: [659, 784, 880, 784, 698, 784, 659, 523] },
+                clear:  { tempo: 260, notes: [523, 659, 784, 1046, 880, 1046, 784, 0] }
+            };
+
+            const active = melodies[mode] || melodies.title;
+            bgmInterval = setInterval(() => {
+                if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
+                const freq = active.notes[noteStep % active.notes.length];
+                if (freq > 0) {
+                    playTone(freq, mode === 'crisis' ? 'triangle' : 'sine', 0.18, 0, 0.04);
+                }
+                noteStep++;
+            }, active.tempo);
+        }
+
+        /* =========================================================================
+           2. GAME DATA & STATE
+           ========================================================================= */
+        let score = 0;
+        let patience = 15; // 0 to 100
+        let patienceTimer = null;
+        let storyIndex = 0;
+        let currentRoom = 'entrance';
+        let foundItems = [];
+        let currentQuizIndex = 0;
+        let currentSetupStep = 0; // 0 to 5
+        let modalCallback = null;
+
+        // Story Script based on Pamphlet
+        const storyScript = [
+            {
+                speaker: "お兄ちゃん（主人公）",
+                avatar: "👦",
+                text: "グラグラッ！！大きな地震だ！<br>家族みんなケガはなかったけど、おうちのライフラインが止まっちゃったぞ…！",
+                effect: "quake",
+                lifelines: [1]
+            },
+            {
+                speaker: "お母さん",
+                avatar: "👩",
+                text: "大変！<strong>「水道」</strong>が止まってトイレの水が流せないわ！さらに<strong>「電気」</strong>も止まって照明や換気扇が使えないし、<strong>「下水道」</strong>も壊れているかも…！",
+                effect: "wrong",
+                lifelines: [1, 2, 3]
+            },
+            {
+                speaker: "妹（低学年）",
+                avatar: "👧",
+                text: "お兄ちゃん……わたしトイレに行きたくなっちゃった。でもお水が出ないから、ずっとガマンするね……😣",
+                effect: "tap",
+                lifelines: [1, 2, 3]
+            },
+            {
+                speaker: "トイレット博士",
+                avatar: "🚽",
+                text: "ちょっと待ったー！トイレを我慢すると<strong>体調不良やストレス、病気や感染症のリスク</strong>が高まるぞ！特に子どもは影響を受けやすいんだ！",
+                effect: "item",
+                lifelines: [1, 2, 3],
+                showWarning: true
+            },
+            {
+                speaker: "トイレット博士",
+                avatar: "🚽",
+                text: "合言葉は<strong>『トイレは我慢しない！備えが安心！』</strong>だ！<br>家の中にある「非常用トイレグッズ」を探して、自宅のトイレを使えるようにしよう！",
+                effect: "step",
+                lifelines: [1, 2, 3],
+                showWarning: true
+            }
+        ];
+
+        // Stage 1: Room Spots & 6 Key Items from Pamphlet
+        const roomData = {
+            entrance: {
+                title: "📍 玄関（すぐに持ち出せる場所！）",
+                spots: [
+                    {
+                        id: "ent-1",
+                        name: "防災リュック",
+                        icon: "🎒",
+                        itemId: "kit",
+                        itemTitle: "簡易トイレ（袋・凝固剤セット）",
+                        itemIcon: "📦",
+                        desc: "大正解！水が出なくても便器にセットして使える『袋と凝固剤のセット』を発見！凝固剤だけの備えも◎だよ！"
+                    },
+                    {
+                        id: "ent-2",
+                        name: "玄関の棚の上",
+                        icon: "🔦",
+                        itemId: "lantern",
+                        itemTitle: "懐中電灯・ランタン",
+                        itemIcon: "🔦",
+                        desc: "ナイス！停電でトイレの電気がつかなくても、ランタンがあれば明るくて安心！電池も忘れずにね！"
+                    },
+                    {
+                        id: "ent-3",
+                        name: "傘立ての奥",
+                        icon: "☂️",
+                        itemId: null,
+                        desc: "ここには傘しかないみたい。他の場所を探してみよう！"
+                    },
+                    {
+                        id: "ent-4",
+                        name: "備蓄ボックス",
+                        icon: "💧",
+                        itemId: "bag",
+                        itemTitle: "便座にかぶせる袋（大きめのごみ袋）",
+                        itemIcon: "🛍️",
+                        desc: "発見！大きめのごみ袋は便器や便座にかぶせて汚れを防ぐのに大活躍するよ！飲料水（1人1日3L）も一緒に備えよう！"
+                    }
+                ]
+            },
+            toilet: {
+                title: "📍 トイレ・洗面所（一番使う場所！）",
+                spots: [
+                    {
+                        id: "toi-1",
+                        name: "トイレ上の収納棚",
+                        icon: "🗄️",
+                        itemId: "sheet",
+                        itemTitle: "吸水シート＆トイレットペーパー",
+                        itemIcon: "🧻",
+                        desc: "発見！吸水シートがあれば掃除の手間を軽減できるよ！トイレットペーパーも普段から多めに備蓄しておこう！"
+                    },
+                    {
+                        id: "toi-2",
+                        name: "洗面台の下の引き出し",
+                        icon: "🧤",
+                        itemId: "gloves",
+                        itemTitle: "使い捨て手袋・ウェットティッシュ・消毒液",
+                        itemIcon: "🧤",
+                        desc: "バッチリ！水で手が洗えないときでも、使い捨て手袋やウェットティッシュ、アルコール消毒液があれば清潔・衛生的に処理できるね！"
+                    },
+                    {
+                        id: "toi-3",
+                        name: "トイレの水洗レバー",
+                        icon: "🌊",
+                        itemId: "trap-flush",
+                        desc: "⚠️危険！下水道が壊れている可能性があるときに水を流すと、詰まったり汚水が逆流したりする危険があるよ！絶対にそのまま流さないでね！"
+                    },
+                    {
+                        id: "toi-4",
+                        name: "消臭コーナー",
+                        icon: "✨",
+                        itemId: "deodorant",
+                        itemTitle: "消臭袋・防臭袋（消臭スプレー・炭・重曹）",
+                        itemIcon: "✨",
+                        desc: "すごい！使用後の袋を入れる『消臭袋・防臭袋』を発見！消臭スプレーや炭・重曹もあると、いやなニオイを防げて快適だよ！"
+                    }
+                ]
+            },
+            bedroom: {
+                title: "📍 寝室（夜中の地震でも安心な場所！）",
+                spots: [
+                    {
+                        id: "bed-1",
+                        name: "ベッド横の防災ポーチ",
+                        icon: "📻",
+                        itemId: null,
+                        desc: "モバイルバッテリーとラジオを発見！情報を集めるのにとっても大事だね！（※トイレグッズは他の場所にあるみたい！）"
+                    },
+                    {
+                        id: "bed-2",
+                        name: "クローゼットの奥",
+                        icon: "🪑",
+                        itemId: null,
+                        desc: "ポータブルトイレや便器にセットするタイプの簡易トイレもあると便利！高齢の方や体調不良の時に安定して使いやすいよ！"
+                    },
+                    {
+                        id: "bed-3",
+                        name: "本棚の防災マップ",
+                        icon: "🗺️",
+                        itemId: null,
+                        desc: "自治体の防災マップを発見！ごみの出し方や仮設トイレの設置場所などを事前にチェックしておこう！"
+                    },
+                    {
+                        id: "bed-4",
+                        name: "ベビー・子ども用品箱",
+                        icon: "🍼",
+                        itemId: null,
+                        desc: "おむつ・おしりふき・生理用品・常備薬も大切な備えだよ！"
+                    }
+                ]
+            }
+        };
+
+        const requiredItemsList = [
+            { id: "kit", name: "簡易トイレ", icon: "📦" },
+            { id: "lantern", name: "ランタン", icon: "🔦" },
+            { id: "bag", name: "大きめ袋", icon: "🛍️" },
+            { id: "sheet", name: "吸水・紙", icon: "🧻" },
+            { id: "gloves", name: "手袋・消毒", icon: "🧤" },
+            { id: "deodorant", name: "消臭・防臭袋", icon: "✨" }
+        ];
+
+        // Quiz Corner: 6 Questions based on the Pamphlet
+        const quizQuestions = [
+            {
+                q: "1人1日5回トイレに行くとすると、<strong>4人家族で7日分（1週間）</strong>は何回分の簡易トイレが必要かな？<br><span class='text-xs text-blue-600'>（計算：4人 × 5回 × 7日）</span>",
+                options: [
+                    { text: "① 35回分", correct: false },
+                    { text: "② 70回分", correct: false },
+                    { text: "③ 140回分", correct: true }
+                ],
+                expTitle: "正解は「140回分」！（4人×5回×7日）",
+                expDesc: "4人家族なら最低3日分（60回分）、できれば7日分（140回分）の簡易トイレを備えておくと安心だよ！"
+            },
+            {
+                q: "災害のとき、水が出ないからといって<strong>トイレを我慢（がまん）する</strong>とどうなってしまうかな？",
+                options: [
+                    { text: "① 体調不良やストレス、病気・感染症のリスクが高まる", correct: true },
+                    { text: "② お腹がすかなくなって元気になる", correct: false },
+                    { text: "③ 特に体への影響はない", correct: false }
+                ],
+                expTitle: "トイレの我慢はとっても危険！",
+                expDesc: "トイレを我慢すると体調不良やストレスの原因になり、病気や感染症のリスクが高まるよ。特に子どもや高齢者は影響を受けやすいんだ！"
+            },
+            {
+                q: "断水してトイレの水が流れないとき、すぐに<strong>バケツでお風呂の残り湯を流して</strong>もいいかな？",
+                options: [
+                    { text: "① どんどん流していい", correct: false },
+                    { text: "② ダメ！下水道が壊れていて逆流や水漏れする危険があるから", correct: true },
+                    { text: "③ ジュースやお茶なら流していい", correct: false }
+                ],
+                expTitle: "そのまま水を流すのは絶対NG！",
+                expDesc: "地震で見えない地面の下の「下水道（排水管）」が壊れていることがあるよ。水を流すと排水できず逆流する危険があるから、必ず非常用トイレの袋を使おう！"
+            },
+            {
+                q: "集めた「非常用トイレグッズ」は、おうちの<strong>どんな場所に置いておく</strong>のがコツかな？",
+                options: [
+                    { text: "① 屋根裏の奥深くの開けにくい箱", correct: false },
+                    { text: "② トイレ、玄関、寝室など「すぐに持ち出せる場所」", correct: true },
+                    { text: "③ お庭の土のなか", correct: false }
+                ],
+                expTitle: "すぐに持ち出せる場所に置こう！",
+                expDesc: "災害はいつ起こるかわからないよ。トイレ・玄関・寝室など、いざという時にすぐ取り出せる場所に置いておこう！"
+            },
+            {
+                q: "災害に備えて、家族みんなで<strong>「普段からできること」</strong>として正しいものはどれかな？",
+                options: [
+                    { text: "① トイレをきれいに保ち、定期的に点検して自治体のゴミ出しルールを確認する", correct: true },
+                    { text: "② 非常用トイレは一度買ったら10年間なにも見なくてよい", correct: false },
+                    { text: "③ トイレの使い方は秘密にして誰にも教えない", correct: false }
+                ],
+                expTitle: "日頃のキレイと確認が大切！",
+                expDesc: "普段からトイレをきれいに掃除しておくと袋のセットもスムーズ！使用期限や数量の点検、自治体の防災マップ確認も家族でやっておこう！"
+            },
+            {
+                q: "最後に確認！覚えておきたい<strong>大切な「合言葉（あいことば）」</strong>はどれかな？",
+                options: [
+                    { text: "① トイレは気合いでガマンしよう！", correct: false },
+                    { text: "② トイレは我慢しない！備えが安心！", correct: true },
+                    { text: "③ 水が止まってもレバーを回そう！", correct: false }
+                ],
+                expTitle: "合言葉は『トイレは我慢しない！備えが安心！』",
+                expDesc: "全6問クリアおめでとう！トイレの備えは、命と心を守る備えだよ。さあ、ステージ2で「簡単5ステップ」の使い方を実践しよう！"
+            }
+        ];
+
+        // Stage 2: 5 Steps + Trap Cards (Strictly matching user's 5 steps)
+        const setupStepsData = [
+            {
+                stepNumber: 1,
+                title: "便座を上げて、便器に袋をかぶせる（その後、便座を下ろす）",
+                sub: "ステップ1：まずは便器が汚れないように袋をかぶせて便座を下ろそう！",
+                icon: "🛍️"
+            },
+            {
+                stepNumber: 2,
+                title: "吸水シートや凝固剤を入れる",
+                sub: "ステップ2：用を足す前に、袋のなかに吸水シートや凝固剤を準備！",
+                icon: "🧪"
+            },
+            {
+                stepNumber: 3,
+                title: "用を足した後、袋を取り出してしっかり結ぶ",
+                sub: "ステップ3：妹がトイレを使ったあと（凝固剤で固めて）袋を取り出し、空気を抜いてしっかり結ぼう！",
+                icon: "🎀"
+            },
+            {
+                stepNumber: 4,
+                title: "消臭袋に入れて臭いを防ぐ",
+                sub: "ステップ4：結んだ袋をさらに「消臭袋（防臭袋）」に入れてニオイをシャットアウト！",
+                icon: "✨"
+            },
+            {
+                stepNumber: 5,
+                title: "可燃ごみとして処理する（※自治体のルールに従う）",
+                sub: "ステップ5：最後は自治体のゴミ出しルールに従って、可燃ごみとして処理しよう！",
+                icon: "🗑️"
+            },
+            {
+                stepNumber: 99, // Trap card
+                title: "バケツでお風呂の残り湯を便器に流す",
+                sub: "水が出ないからバケツの水でジャーッと流す？",
+                icon: "🪣"
+            }
+        ];
+
+        // Ending Checklist Data from Pamphlet
+        const homeChecklistItems = [
+            { id: "chk1", category: "非常用トイレ", text: "簡易トイレ（1人1日5回×家族4人×7日＝140回分が目安）" },
+            { id: "chk2", category: "非常用トイレ", text: "便座にかぶせる大きめのごみ袋・凝固剤・吸水シート" },
+            { id: "chk3", category: "非常用トイレ", text: "消臭袋・防臭袋・消臭スプレー（炭・重曹も◎）" },
+            { id: "chk4", category: "衛生グッズ", text: "使い捨て手袋・ウェットティッシュ・アルコール消毒液" },
+            { id: "chk5", category: "衛生グッズ", text: "トイレットペーパーの多めの備蓄" },
+            { id: "chk6", category: "その他の備え", text: "飲料水（1人1日3Lが目安）・非常食" },
+            { id: "chk7", category: "その他の備え", text: "懐中電灯・ランタン（電池も）・モバイルバッテリー・ラジオ" },
+            { id: "chk8", category: "家族の備え", text: "子ども用品・生理用品・常備薬・ポータブルトイレの検討" },
+            { id: "chk9", category: "普段の習慣", text: "トイレ・玄関・寝室などすぐに持ち出せる場所に置いている" },
+            { id: "chk10", category: "普段の習慣", text: "使い方を家族で確認し、自治体のゴミ出しルールを確認した" }
+        ];
+
+        /* =========================================================================
+           3. NAVIGATION & SCREEN CONTROL
+           ========================================================================= */
+        function showScreen(screenId) {
+            const screens = ['screen-title', 'screen-story', 'screen-stage1', 'screen-quiz', 'screen-stage2', 'screen-ending'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+
+            // Toggle HUD and Home button
+            const hud = document.getElementById('hud-bar');
+            const homeBtn = document.getElementById('btn-home');
+            if (screenId === 'screen-stage1' || screenId === 'screen-quiz' || screenId === 'screen-stage2') {
+                hud.classList.remove('hidden');
+            } else {
+                hud.classList.add('hidden');
+            }
+
+            if (screenId === 'screen-title') {
+                homeBtn.classList.add('hidden');
+            } else {
+                homeBtn.classList.remove('hidden');
+            }
+        }
+
+        function confirmGoHome() {
+            playSE('tap');
+            stopPatienceTimer();
+            resetToTitle();
+        }
+
+        function resetToTitle() {
+            playSE('tap');
+            stopPatienceTimer();
+            score = 0;
+            patience = 15;
+            foundItems = [];
+            currentSetupStep = 0;
+            updateHUD();
+            showScreen('screen-title');
+            startBGM('title');
+        }
+
+        /* =========================================================================
+           4. GAME FLOW: OPENING STORY
+           ========================================================================= */
+        function startGame() {
+            initAudio();
+            playSE('tap');
+            score = 0;
+            patience = 15;
+            foundItems = [];
+            currentSetupStep = 0;
+            storyIndex = 0;
+
+            showScreen('screen-story');
+            startBGM('crisis');
+            renderStoryStep();
+        }
+
+        function renderStoryStep() {
+            const step = storyScript[storyIndex];
+            document.getElementById('story-speaker').textContent = step.speaker;
+            document.getElementById('story-avatar').textContent = step.avatar;
+            document.getElementById('story-text').innerHTML = step.text;
+            document.getElementById('story-step-indicator').textContent = `ストーリー ${storyIndex + 1} / ${storyScript.length}`;
+
+            // Shake frame on step 0
+            const frame = document.getElementById('app-frame');
+            if (storyIndex === 0) {
+                frame.classList.add('animate-shake');
+                setTimeout(() => frame.classList.remove('animate-shake'), 900);
+            }
+
+            // Highlight stopped lifelines
+            [1, 2, 3].forEach(num => {
+                const el = document.getElementById(`lifeline-${num}`);
+                if (step.lifelines.includes(num)) {
+                    el.classList.remove('opacity-40');
+                    el.classList.add('border-red-400', 'bg-red-950/60');
+                } else {
+                    el.classList.add('opacity-40');
+                    el.classList.remove('border-red-400', 'bg-red-950/60');
+                }
+            });
+
+            // Show/hide warning box
+            const warnBox = document.getElementById('story-warning-box');
+            if (step.showWarning) {
+                warnBox.classList.remove('hidden');
+            } else {
+                warnBox.classList.add('hidden');
+            }
+
+            const btnText = document.getElementById('story-btn-text');
+            btnText.textContent = (storyIndex === storyScript.length - 1) ? '🔍 ステージ1：グッズを探しにいく！' : 'つぎへ ▶';
+
+            playSE(step.effect);
+        }
+
+        function nextStoryStep() {
+            storyIndex++;
+            if (storyIndex < storyScript.length) {
+                renderStoryStep();
+            } else {
+                startStage1();
+            }
+        }
+
+        /* =========================================================================
+           5. HUD & PATIENCE TIMER
+           ========================================================================= */
+        function updateHUD() {
+            document.getElementById('score-display').textContent = score;
+            const bar = document.getElementById('patience-bar');
+            const text = document.getElementById('patience-text');
+            const face = document.getElementById('sister-face');
+
+            patience = Math.max(0, Math.min(100, patience));
+            bar.style.width = `${patience}%`;
+            text.textContent = `${Math.round(patience)}%`;
+
+            if (patience < 45) {
+                face.textContent = '😣';
+            } else if (patience < 75) {
+                face.textContent = '😖';
+            } else {
+                face.textContent = '😭';
+            }
+        }
+
+        function startPatienceTimer() {
+            stopPatienceTimer();
+            patienceTimer = setInterval(() => {
+                // Pause timer if modal is open
+                if (!document.getElementById('modal-overlay').classList.contains('hidden')) return;
+
+                patience += 1.2;
+                updateHUD();
+
+                if (patience >= 100) {
+                    patience = 60;
+                    updateHUD();
+                    playSE('wrong');
+                    showModal(
+                        '😭',
+                        'ガマン限界ピンチ！',
+                        '妹のトイレ我慢が限界になっちゃった！',
+                        'トイレを我慢すると体調不良やストレスの原因になるよ！トイレット博士の応援で少し回復したから、急いで準備を続けよう！',
+                        'がんばる！'
+                    );
+                }
+            }, 1000);
+        }
+
+        function stopPatienceTimer() {
+            if (patienceTimer) {
+                clearInterval(patienceTimer);
+                patienceTimer = null;
+            }
+        }
+
+        /* =========================================================================
+           6. STAGE 1: ROOM EXPLORATION & MATH QUIZ
+           ========================================================================= */
+        function startStage1() {
+            showScreen('screen-stage1');
+            startBGM('search');
+            currentRoom = 'entrance';
+            updateHUD();
+            renderInventory();
+            switchRoom('entrance');
+            startPatienceTimer();
+        }
+
+        function switchRoom(roomKey) {
+            playSE('tap');
+            currentRoom = roomKey;
+            const rooms = ['entrance', 'toilet', 'bedroom'];
+            rooms.forEach(r => {
+                const tab = document.getElementById(`tab-${r}`);
+                if (r === roomKey) {
+                    tab.className = 'py-2 rounded-xl font-extrabold text-xs border-b-4 transition-all bg-amber-400 text-slate-900 border-amber-600 shadow';
+                } else {
+                    tab.className = 'py-2 rounded-xl font-extrabold text-xs border-b-4 transition-all bg-white text-slate-600 border-slate-300';
+                }
+            });
+
+            const data = roomData[roomKey];
+            document.getElementById('room-title').textContent = data.title;
+
+            const container = document.getElementById('room-spots');
+            container.innerHTML = '';
+
+            data.spots.forEach(spot => {
+                const isFound = spot.itemId && foundItems.includes(spot.itemId);
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 shadow-sm game-btn min-h-[104px] transition-all ${
+                    isFound
+                        ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                        : 'bg-sky-50 hover:bg-sky-100 border-sky-300 text-slate-800'
+                }`;
+                btn.onclick = () => inspectSpot(spot);
+
+                btn.innerHTML = `
+                    <div class="text-3xl">${isFound ? '✅' : spot.icon}</div>
+                    <div class="text-xs font-extrabold text-center leading-tight">${spot.name}</div>
+                    <div class="text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isFound ? 'bg-emerald-200 text-emerald-900' : 'bg-white text-blue-600 border border-blue-200'
+                    }">
+                        ${isFound ? '発見ずみ！' : '調べる 🔍'}
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function inspectSpot(spot) {
+            if (spot.itemId === 'trap-flush') {
+                playSE('wrong');
+                patience = Math.min(95, patience + 8);
+                updateHUD();
+                showModal(
+                    '🌊❌',
+                    '危険アクション！',
+                    'そのまま水を流すのはNG！',
+                    spot.desc,
+                    '気をつける！'
+                );
+                return;
+            }
+
+            if (spot.itemId) {
+                if (foundItems.includes(spot.itemId)) {
+                    playSE('tap');
+                    showModal(spot.itemIcon, 'チェック済み', spot.itemTitle, spot.desc, 'OK！');
+                    return;
+                }
+
+                // New required item found!
+                foundItems.push(spot.itemId);
+                score += 150;
+                patience = Math.max(5, patience - 8);
+                updateHUD();
+                renderInventory();
+                switchRoom(currentRoom);
+                playSE('item');
+
+                document.getElementById('found-count').textContent = foundItems.length;
+
+                showModal(
+                    spot.itemIcon,
+                    `非常用トイレグッズ発見！（${foundItems.length}/6）`,
+                    spot.itemTitle,
+                    spot.desc,
+                    foundItems.length === 6 ? '🎓 防災トイレクイズ（全6問）へ進む！' : 'よし、次を探そう！',
+                    () => {
+                        if (foundItems.length === 6) {
+                            startQuizCorner();
+                        }
+                    }
+                );
+            } else {
+                // Helpful tip spot
+                playSE('tap');
+                score += 20;
+                updateHUD();
+                showModal(spot.icon, '防災まめ知識💡', spot.name, spot.desc, 'なるほど！');
+            }
+        }
+
+        function renderInventory() {
+            const grid = document.getElementById('inventory-grid');
+            grid.innerHTML = '';
+            requiredItemsList.forEach(item => {
+                const hasIt = foundItems.includes(item.id);
+                const cell = document.createElement('div');
+                cell.className = `rounded-xl p-1.5 text-center border transition-all ${
+                    hasIt ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-700 border-slate-600 text-slate-400'
+                }`;
+                cell.innerHTML = `
+                    <div class="text-lg">${hasIt ? item.icon : '❓'}</div>
+                    <div class="text-[9px] font-bold truncate">${item.name}</div>
+                `;
+                grid.appendChild(cell);
+            });
+        }
+
+        /* =========================================================================
+           6.5 QUIZ CORNER (6 QUESTIONS)
+           ========================================================================= */
+        function startQuizCorner() {
+            playSE('step');
+            currentQuizIndex = 0;
+            showScreen('screen-quiz');
+            renderCurrentQuiz();
+        }
+
+        function renderCurrentQuiz() {
+            const qData = quizQuestions[currentQuizIndex];
+            document.getElementById('quiz-progress-num').textContent = currentQuizIndex + 1;
+            document.getElementById('quiz-badge').textContent = `第 ${currentQuizIndex + 1} 問 / 全 ${quizQuestions.length} 問`;
+            document.getElementById('quiz-question-text').innerHTML = qData.q;
+
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            qData.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-3 px-3.5 rounded-2xl border-b-4 border-blue-800 text-left text-xs sm:text-sm shadow game-btn leading-snug';
+                btn.innerHTML = opt.text;
+                btn.onclick = () => handleQuizAnswer(opt.correct, qData);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleQuizAnswer(isCorrect, qData) {
+            if (isCorrect) {
+                score += 150;
+                patience = Math.max(5, patience - 8);
+                updateHUD();
+                playSE('correct');
+
+                const isLast = (currentQuizIndex === quizQuestions.length - 1);
+                showModal(
+                    '⭕✨',
+                    `第${currentQuizIndex + 1}問 大正解！（＋150点）`,
+                    qData.expTitle,
+                    qData.expDesc,
+                    isLast ? '🚽 ステージ2：簡単5ステップ実践へ！' : 'つぎの問題へ ▶',
+                    () => {
+                        if (isLast) {
+                            startStage2();
+                        } else {
+                            currentQuizIndex++;
+                            renderCurrentQuiz();
+                        }
+                    }
+                );
+            } else {
+                patience = Math.min(95, patience + 6);
+                updateHUD();
+                playSE('wrong');
+                showModal(
+                    '🤔💡',
+                    'おしい！もういちど考えてみよう',
+                    'トイレット博士のヒント！',
+                    qData.expDesc,
+                    'もういちど選ぶ'
+                );
+            }
+        }
+
+        /* =========================================================================
+           7. STAGE 2: 5-STEP TOILET SETUP SIMULATION
+           ========================================================================= */
+        function startStage2() {
+            showScreen('screen-stage2');
+            startBGM('setup');
+            currentSetupStep = 0;
+            updateStage2UI();
+        }
+
+        function updateStage2UI() {
+            document.getElementById('step-progress').textContent = currentSetupStep;
+            renderToiletSVG(currentSetupStep);
+
+            // Update mini badges (1 to 5)
+            for (let i = 1; i <= 5; i++) {
+                const b = document.getElementById(`badge-step-${i}`);
+                if (!b) continue;
+                if (i <= currentSetupStep) {
+                    b.className = 'text-[9px] font-extrabold text-center py-1 rounded bg-emerald-500 text-white shadow-xs';
+                } else if (i === currentSetupStep + 1) {
+                    b.className = 'text-[9px] font-extrabold text-center py-1 rounded bg-amber-300 text-slate-900 animate-pulse';
+                } else {
+                    b.className = 'text-[9px] font-bold text-center py-1 rounded bg-slate-100 text-slate-400';
+                }
+            }
+
+            const banner = document.getElementById('step-instruction-banner');
+            if (currentSetupStep === 0) {
+                banner.textContent = '👇 ステップ1：便器に袋をかぶせて便座を下ろそう！';
+            } else if (currentSetupStep === 1) {
+                banner.textContent = '👇 ステップ2：吸水シートや凝固剤を入れよう！';
+            } else if (currentSetupStep === 2) {
+                banner.textContent = '👧 妹がトイレを使ったよ！👇 ステップ3：袋を取り出してしっかり結ぼう！';
+            } else if (currentSetupStep === 3) {
+                banner.textContent = '👇 ステップ4：消臭袋に入れて臭いを防ごう！';
+            } else if (currentSetupStep === 4) {
+                banner.textContent = '👇 ステップ5：可燃ごみとして処理しよう（自治体のルールに従う）！';
+            } else {
+                banner.textContent = '🎉 簡単5ステップ完了！完璧にできたね！';
+            }
+
+            renderStepCards();
+        }
+
+        function renderStepCards() {
+            const container = document.getElementById('step-cards-container');
+            container.innerHTML = '';
+
+            const expectedStep = currentSetupStep + 1;
+            if (expectedStep > 5) return;
+
+            // Always include the correct next step, trap card, and up to 2 future steps so 3~4 cards fit cleanly on screen
+            const correctCard = setupStepsData.find(s => s.stepNumber === expectedStep);
+            const trapCard = setupStepsData.find(s => s.stepNumber === 99);
+            const otherSteps = setupStepsData.filter(s => s.stepNumber > expectedStep && s.stepNumber <= 5).slice(0, 2);
+
+            const pool = [correctCard, trapCard, ...otherSteps].filter(Boolean);
+            const shuffled = pool.sort((a, b) => {
+                return ((a.stepNumber * 11 + currentSetupStep * 3) % 7) - ((b.stepNumber * 11 + currentSetupStep * 3) % 7);
+            });
+
+            shuffled.forEach(card => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full bg-white hover:bg-blue-50 border-2 border-blue-300 rounded-2xl p-2 text-left flex items-center gap-2.5 shadow-sm game-btn';
+                btn.onclick = () => selectStepCard(card);
+                btn.innerHTML = `
+                    <div class="w-10 h-10 rounded-xl bg-sky-100 border border-sky-300 flex items-center justify-center text-xl shrink-0">
+                        ${card.icon}
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs font-extrabold text-slate-900 leading-snug">${card.title}</div>
+                        <div class="text-[10px] font-bold text-slate-500 leading-tight mt-0.5">${card.sub}</div>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectStepCard(card) {
+            const expectedStep = currentSetupStep + 1;
+
+            if (card.stepNumber === 99) {
+                // Trap card chosen
+                playSE('wrong');
+                patience = Math.min(95, patience + 12);
+                updateHUD();
+                showModal(
+                    '🪣❌',
+                    'ひっかけ罠に注意！',
+                    'お風呂の残り湯を流すのは危険！',
+                    '地震のあとは下水道が使えないことがあるよ！無理に流すと排水ができず、汚水が逆流する可能性があるんだ。必ず非常用トイレの袋を使おう！',
+                    'わかった！'
+                );
+                return;
+            }
+
+            if (card.stepNumber === expectedStep) {
+                // Correct step!
+                currentSetupStep++;
+                score += 200;
+                patience = Math.max(0, patience - 15);
+                updateHUD();
+                playSE('step');
+                updateStage2UI();
+
+                // Special Sister Cut-in right after Step 2 (Sister uses the prepared toilet!)
+                if (currentSetupStep === 2) {
+                    patience = 0;
+                    updateHUD();
+                    showModal(
+                        '👧✨',
+                        'トイレ準備完了！',
+                        '妹が安心してトイレを使えたよ！',
+                        '妹：「わぁ〜ありがとう！お水が止まっててもおうちのトイレが使えてスッキリしたよ！用を足したあとに凝固剤もふりかけたよ！」<br>さあ、次は<strong>ステップ3「袋を取り出してしっかり結ぶ」</strong>だ！',
+                        'ステップ3へ進む！'
+                    );
+                } else if (currentSetupStep === 5) {
+                    stopPatienceTimer();
+                    setTimeout(() => {
+                        playSE('fanfare');
+                        showModal(
+                            '🚽🎉',
+                            '5ステップ完全マスター！',
+                            'わが家のトイレ危機を救ったぞ！',
+                            '①便座を上げて便器に袋をかぶせる（便座を下ろす）<br>②吸水シートや凝固剤を入れる<br>③用を足した後、袋を取り出してしっかり結ぶ<br>④消臭袋に入れて臭いを防ぐ<br>⑤可燃ごみとして処理する（自治体のルールに従う）<br>すべて完璧にマスターしたね！',
+                            '🏆 認定証＆チェックリストへ！',
+                            () => startEnding()
+                        );
+                    }, 300);
+                }
+            } else {
+                // Wrong order
+                playSE('wrong');
+                patience = Math.min(95, patience + 6);
+                updateHUD();
+                showModal(
+                    '🤔',
+                    '順番が違うみたい！',
+                    `今は「ステップ ${expectedStep}」の番だよ！`,
+                    getHintForStep(expectedStep),
+                    'もういちど選ぶ'
+                );
+            }
+        }
+
+        function getHintForStep(step) {
+            if (step === 1) return "ステップ1：まずは便座を上げて、便器に袋をかぶせよう（その後、便座を下ろすよ）！";
+            if (step === 2) return "ステップ2：袋をかぶせたら、用を足す前に『吸水シートや凝固剤を入れる』よ！";
+            if (step === 3) return "ステップ3：妹が用を足した後は、『袋を取り出してしっかり結ぶ』を選ぼう！";
+            if (step === 4) return "ステップ4：しっかり結んだ袋を、次は『消臭袋に入れて臭いを防ぐ』よ！";
+            return "ステップ5：最後は自治体のルールに従って『可燃ごみとして処理する』を選ぼう！";
+        }
+
+        // Dynamic SVG Toilet Drawing for Each of the 5 Steps
+        function renderToiletSVG(step) {
+            const holder = document.getElementById('toilet-svg-holder');
+            if (step === 0) {
+                // Initial home toilet
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full">
+                        <rect x="45" y="8" width="70" height="32" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="3"/>
+                        <path d="M52 70 L58 106 L102 106 L108 70" fill="#f1f5f9" stroke="#475569" stroke-width="3"/>
+                        <ellipse cx="80" cy="66" rx="38" ry="20" fill="#f8fafc" stroke="#475569" stroke-width="3"/>
+                        <ellipse cx="80" cy="66" rx="25" ry="12" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+                        <text x="80" y="28" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">自宅のトイレ</text>
+                    </svg>
+                `;
+            } else if (step === 1) {
+                // Step 1: Lift seat, cover bowl with bag, lower seat
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full animate-pop">
+                        <rect x="45" y="8" width="70" height="32" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="3"/>
+                        <path d="M52 70 L58 106 L102 106 L108 70" fill="#f1f5f9" stroke="#475569" stroke-width="3"/>
+                        <ellipse cx="80" cy="68" rx="42" ry="23" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+                        <ellipse cx="80" cy="65" rx="34" ry="17" fill="#f8fafc" stroke="#64748b" stroke-width="3"/>
+                        <ellipse cx="80" cy="65" rx="23" ry="11" fill="#334155"/>
+                        <text x="80" y="28" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">①袋をかぶせ便座を下ろす</text>
+                    </svg>
+                `;
+            } else if (step === 2) {
+                // Step 2: Absorbent sheet & coagulant inside + Sister used it
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full animate-pop">
+                        <rect x="45" y="8" width="70" height="32" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="3"/>
+                        <path d="M52 70 L58 106 L102 106 L108 70" fill="#f1f5f9" stroke="#475569" stroke-width="3"/>
+                        <ellipse cx="80" cy="68" rx="42" ry="23" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+                        <ellipse cx="80" cy="66" rx="26" ry="13" fill="#fef08a" stroke="#eab308" stroke-width="2"/>
+                        <text x="80" y="52" text-anchor="middle" font-size="14">✨🧪👧✨</text>
+                        <text x="80" y="70" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">②シート・凝固剤IN</text>
+                    </svg>
+                `;
+            } else if (step === 3) {
+                // Step 3: Take out the inner black bag and tie tightly
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full animate-pop">
+                        <path d="M65 22 L80 42 L95 22" fill="none" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+                        <ellipse cx="80" cy="74" rx="34" ry="28" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+                        <rect x="68" y="37" width="24" height="7" rx="3" fill="#ef4444"/>
+                        <text x="80" y="75" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">③袋を取り出して</text>
+                        <text x="80" y="89" text-anchor="middle" font-size="10" font-weight="bold" fill="#fde047">しっかり結ぶ！</text>
+                    </svg>
+                `;
+            } else if (step === 4) {
+                // Step 4: Put into odor-proof bag (消臭袋)
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full animate-pop">
+                        <ellipse cx="80" cy="68" rx="44" ry="36" fill="#bae6fd" fill-opacity="0.75" stroke="#0284c7" stroke-width="3" stroke-dasharray="5 3"/>
+                        <ellipse cx="80" cy="74" rx="25" ry="20" fill="#1e293b"/>
+                        <rect x="70" y="48" width="20" height="6" rx="3" fill="#0284c7"/>
+                        <text x="30" y="35" font-size="15">✨</text>
+                        <text x="122" y="35" font-size="15">✨</text>
+                        <text x="80" y="24" text-anchor="middle" font-size="10" font-weight="bold" fill="#0369a1">④消臭袋でニオイ防止！</text>
+                    </svg>
+                `;
+            } else {
+                // Step 5: Dispose as burnable garbage according to local municipality rules
+                holder.innerHTML = `
+                    <svg viewBox="0 0 160 115" class="w-full h-full animate-pop">
+                        <rect x="28" y="18" width="104" height="84" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="3"/>
+                        <ellipse cx="62" cy="66" rx="22" ry="18" fill="#0284c7"/>
+                        <text x="62" y="70" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">消臭袋</text>
+                        <text x="105" y="55" text-anchor="middle" font-size="22">🚛</text>
+                        <text x="105" y="75" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">可燃ごみへ</text>
+                        <text x="80" y="96" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#047857">⑤自治体のルールに従う</text>
+                    </svg>
+                `;
+            }
+        }
+
+        /* =========================================================================
+           8. ENDING & INTERACTIVE HOME CHECKLIST
+           ========================================================================= */
+        function startEnding() {
+            showScreen('screen-ending');
+            startBGM('clear');
+            document.getElementById('final-score').textContent = `${score}点`;
+            renderChecklist();
+        }
+
+        function openChecklistDirectly() {
+            initAudio();
+            playSE('tap');
+            score = 1000;
+            startEnding();
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklist-items');
+            container.innerHTML = '';
+
+            homeChecklistItems.forEach((item, index) => {
+                const row = document.createElement('label');
+                row.className = 'flex items-start gap-2.5 p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 cursor-pointer transition-all';
+                row.innerHTML = `
+                    <input type="checkbox" onchange="updateChecklistProgress()" class="mt-0.5 w-4 h-4 accent-emerald-600 rounded cursor-pointer shrink-0">
+                    <div class="text-xs leading-snug">
+                        <span class="inline-block bg-emerald-100 text-emerald-800 font-extrabold text-[10px] px-1.5 py-0.2 rounded mr-1">${item.category}</span>
+                        <span class="font-bold text-slate-800">${item.text}</span>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+            updateChecklistProgress();
+        }
+
+        function updateChecklistProgress() {
+            const checks = document.querySelectorAll('#checklist-items input[type="checkbox"]');
+            let checkedCount = 0;
+            checks.forEach(c => { if (c.checked) checkedCount++; });
+
+            const badge = document.getElementById('checklist-badge');
+            badge.textContent = `${checkedCount} / ${homeChecklistItems.length} チェック`;
+
+            if (checkedCount > 0) {
+                playSE('tap');
+            }
+            if (checkedCount === homeChecklistItems.length) {
+                playSE('fanfare');
+                badge.textContent = '🏅 おうち防衛隊マスター！';
+                badge.className = 'bg-yellow-400 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded-xl shadow';
+            }
+        }
+
+        /* =========================================================================
+           9. MODAL DIALOG HELPER
+           ========================================================================= */
+        function showModal(icon, tag, title, desc, btnText = 'OK！', callback = null) {
+            document.getElementById('modal-icon').textContent = icon;
+            document.getElementById('modal-tag').textContent = tag;
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-desc').innerHTML = desc;
+            document.getElementById('modal-choices').classList.add('hidden');
+
+            const closeBtn = document.getElementById('modal-close-btn');
+            closeBtn.classList.remove('hidden');
+            closeBtn.textContent = btnText;
+
+            modalCallback = callback;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            playSE('tap');
+            document.getElementById('modal-overlay').classList.add('hidden');
+            if (typeof modalCallback === 'function') {
+                const cb = modalCallback;
+                modalCallback = null;
+                cb();
+            }
+        }
+    </script>
+</body>
+</html>
